@@ -12,7 +12,10 @@ import SwiftData
 struct spark_budgetApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            Account.self,
+            Transaction.self,
+            Bill.self,
+            UserSettings.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

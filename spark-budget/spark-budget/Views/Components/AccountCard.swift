@@ -59,6 +59,9 @@ struct AccountCard: View {
                 .fill(Color(UIColor.systemBackground))
                 .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
         )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(account.name), \(account.type.rawValue)\(account.isPrimary ? ", Primary account" : ""), Balance: \(account.formattedBalance)")
+        .accessibilityHint("Double tap to view account details")
     }
 }
 

@@ -19,6 +19,8 @@ struct AddEditAccountView: View {
     @State private var accountNumber: String
     @State private var isPrimary: Bool
     @State private var selectedColor: Color
+    @State private var savedSuccessfully = false
+    @State private var error: AppError?
 
     let account: Account?
     let isEditing: Bool
@@ -73,6 +75,8 @@ struct AddEditAccountView: View {
             }
             .navigationTitle(isEditing ? "Edit Account" : "New Account")
             .navigationBarTitleDisplayMode(.inline)
+            .sensoryFeedback(.success, trigger: savedSuccessfully)
+            .errorAlert($error)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
@@ -91,38 +95,53 @@ struct AddEditAccountView: View {
     }
 
     private func saveAccount() {
-        let balanceDecimal = Decimal(string: balance) ?? 0
-
-        if let account = account {
-            // Update existing account
-            account.name = name
-            account.type = type
-            account.balance = balanceDecimal
-            account.accountNumber = accountNumber.isEmpty ? nil : accountNumber
-            account.isPrimary = isPrimary
-            account.color = selectedColor
-            account.modifiedAt = Date()
-        } else {
-            // Create new account
-            let newAccount = Account(
-                name: name,
-                type: type,
-                balance: balanceDecimal,
-                isPrimary: isPrimary,
-                color: selectedColor,
-                accountNumber: accountNumber.isEmpty ? nil : accountNumber
-            )
-            modelContext.insert(newAccount)
+        // Validation
+        guard !name.isEmpty else {
+            error = .invalidData("Account name is required")
+            return
         }
 
-        // If this account is set as primary, unset all others
-        if isPrimary {
-            for acc in accounts where acc.id != account?.id {
-                acc.isPrimary = false
+        guard let balanceDecimal = Decimal(string: balance) else {
+            error = .invalidData("Please enter a valid balance amount")
+            return
+        }
+
+        do {
+            if let account = account {
+                // Update existing account
+                account.name = name
+                account.type = type
+                account.balance = balanceDecimal
+                account.accountNumber = accountNumber.isEmpty ? nil : accountNumber
+                account.isPrimary = isPrimary
+                account.color = selectedColor
+                account.modifiedAt = Date()
+            } else {
+                // Create new account
+                let newAccount = Account(
+                    name: name,
+                    type: type,
+                    balance: balanceDecimal,
+                    isPrimary: isPrimary,
+                    color: selectedColor,
+                    accountNumber: accountNumber.isEmpty ? nil : accountNumber
+                )
+                modelContext.insert(newAccount)
             }
-        }
 
-        dismiss()
+            // If this account is set as primary, unset all others
+            if isPrimary {
+                for acc in accounts where acc.id != account?.id {
+                    acc.isPrimary = false
+                }
+            }
+
+            try modelContext.save()
+            savedSuccessfully.toggle()
+            dismiss()
+        } catch {
+            self.error = .saveFailed(error.localizedDescription)
+        }
     }
 }
 

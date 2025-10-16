@@ -13,6 +13,7 @@ struct AccountsListView: View {
     @Query private var allAccounts: [Account]
 
     @State private var showingAddSheet = false
+    @State private var isRefreshing = false
 
     var accounts: [Account] {
         allAccounts.sorted { first, second in
@@ -51,7 +52,9 @@ struct AccountsListView: View {
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                                 Text(formattedTotalBalance)
-                                    .font(.system(size: 36, weight: .bold))
+                                    .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                                    .minimumScaleFactor(0.5)
+                                    .lineLimit(1)
                                 Text("\(accounts.count) account\(accounts.count == 1 ? "" : "s")")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
@@ -69,6 +72,9 @@ struct AccountsListView: View {
                             }
                             .onDelete(perform: deleteAccounts)
                         }
+                    }
+                    .refreshable {
+                        await refreshAccounts()
                     }
                 }
             }
@@ -89,11 +95,17 @@ struct AccountsListView: View {
     }
 
     private func deleteAccounts(offsets: IndexSet) {
-        withAnimation {
+        withAnimation(.smooth) {
             for index in offsets {
                 modelContext.delete(accounts[index])
             }
         }
+    }
+
+    private func refreshAccounts() async {
+        // Simulate a brief refresh delay for smooth animation
+        try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+        // SwiftData automatically refreshes queries
     }
 }
 
